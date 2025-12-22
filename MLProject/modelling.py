@@ -21,7 +21,7 @@ except Exception as e:
 def main():
     print("--- Memulai Proses Training CI/CD ---")
     
-    csv_filename = 'clean_telco_churn_preprocessing.csv'
+    csv_filename = 'MLProject/clean_telco_churn_preprocessing.csv'
     
     try:
         df = pd.read_csv(csv_filename)
