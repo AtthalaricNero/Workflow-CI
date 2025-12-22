@@ -18,19 +18,31 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Set up Python 3.12
+    - name: Set up Python 3.12.7
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
+        python-version: '3.12.7'
 
-    - name: Install Dependencies
+    - name: Check Env
+      run: |
+        python --version
+        pip --version
+        ls -R
+
+    - name: Install dependencies
       run: |
         pip install mlflow==2.19.0 dagshub pandas scikit-learn matplotlib seaborn
 
-    - name: Run MLflow Project
+    - name: Run mlflow project
       env:
-        MLFLOW_TRACKING_USERNAME: ${{ vars.DAGSHUB_USERNAME }} 
+        MLFLOW_TRACKING_USERNAME: AtthalaricNero
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+        MLFLOW_TRACKING_URI: https://dagshub.com/AtthalaricNero/Proyek_ML_Dicoding.mlflow
       run: |
         cd MLProject
         mlflow run . --env-manager=local
+
+    - name: Get latest MLflow run_id
+      run: |
+        echo "Displaying generated Run ID:"
+        cat MLProject/run_id.txt

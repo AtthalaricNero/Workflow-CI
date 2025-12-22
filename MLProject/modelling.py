@@ -9,24 +9,23 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
-DAGSHUB_USERNAME = "AtthalaricNero" 
-DAGSHUB_REPO_NAME = "Proyek_ML_Dicoding" 
+DAGSHUB_USERNAME = "AtthalaricNero"
+DAGSHUB_REPO_NAME = "Proyek_ML_Dicoding"
+remote_server_uri = f"https://dagshub.com/{DAGSHUB_USERNAME}/{DAGSHUB_REPO_NAME}.mlflow"
 
-try:
-    dagshub.init(repo_owner=DAGSHUB_USERNAME, repo_name=DAGSHUB_REPO_NAME, mlflow=True)
-    print("Berhasil koneksi ke DagsHub!")
-except Exception as e:
-    print(f"Peringatan DagsHub (Bisa diabaikan jika berjalan di GitHub Actions): {e}")
+mlflow.set_tracking_uri(remote_server_uri)
 
 def main():
     print("--- Memulai Proses Training CI/CD ---")
     
-    csv_filename = 'MLProject/clean_telco_churn_preprocessing.csv'
+    csv_filename = 'clean_telco_churn_preprocessing.csv' 
     
     try:
         df = pd.read_csv(csv_filename)
+        print(f"Berhasil memuat data: {csv_filename}")
     except FileNotFoundError:
-        print(f"Error: File '{csv_filename}' tidak ditemukan.")
+        print(f"Error Fatal: File '{csv_filename}' tidak ditemukan di folder kerja saat ini.")
+        print("Isi folder saat ini:", os.listdir())
         return
 
     X = df.drop('Churn', axis=1)
@@ -35,7 +34,6 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     print("Sedang mencari parameter terbaik...")
-    
     rf = RandomForestClassifier(random_state=42)
     
     param_grid = {
@@ -59,8 +57,7 @@ def main():
         "recall": recall_score(y_test, y_pred),
         "f1_score": f1_score(y_test, y_pred)
     }
-
-    mlflow.set_experiment("Telco_Churn_Pipeline")
+    
     mlflow.sklearn.autolog(disable=True) 
 
     with mlflow.start_run() as run:
@@ -68,10 +65,9 @@ def main():
         
         mlflow.log_params(best_params)
         mlflow.log_metrics(metrics)
-        
         mlflow.sklearn.log_model(best_model, "model_final")
         
-        # Confusion Matrix
+        # Artefak
         plt.figure(figsize=(6,5))
         sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt='d', cmap='Blues')
         plt.title('Confusion Matrix')
@@ -80,7 +76,6 @@ def main():
         mlflow.log_artifact("confusion_matrix.png")
         plt.close()
         
-        # Feature Importance
         if hasattr(best_model, 'feature_importances_'):
             plt.figure(figsize=(10,6))
             pd.Series(best_model.feature_importances_, index=X.columns).nlargest(10).plot(kind='barh')
