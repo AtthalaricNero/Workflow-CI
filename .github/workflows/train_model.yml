@@ -1,0 +1,36 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'MLProject/**'
+
+permissions:
+  contents: write
+
+jobs:
+  train-model:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install Dependencies
+      run: |
+        pip install mlflow==2.19.0 dagshub pandas scikit-learn matplotlib seaborn
+
+    - name: Run MLflow Project
+      env:
+        MLFLOW_TRACKING_USERNAME: ${{ vars.DAGSHUB_USERNAME }} 
+        MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+      run: |
+        cd MLProject
+        mlflow run . --env-manager=local
