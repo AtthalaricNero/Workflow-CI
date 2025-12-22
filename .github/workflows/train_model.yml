@@ -31,7 +31,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install mlflow==2.19.0 dagshub
+        pip install mlflow==2.19.0 dagshub pandas scikit-learn matplotlib seaborn
 
     - name: Run mlflow project
       env:
@@ -49,9 +49,10 @@ jobs:
 
     - name: Install Python dependencies
       run: |
+        echo "Dependencies already installed in Step 4 to prevent runtime error."
         pip install pandas scikit-learn matplotlib seaborn
 
-    - name: Upload to GitHub
+    - name: Upload to Google Drive
       uses: actions/upload-artifact@v4
       with:
         name: run-id-file
