@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI Pipeline (Advanced Image Match)
 
 on:
   push:
@@ -11,11 +11,11 @@ permissions:
   contents: write
 
 jobs:
-  train-model:
+  build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout Code
+    - name: Run actions/checkout@v3
       uses: actions/checkout@v3
 
     - name: Set up Python 3.12.7
@@ -31,7 +31,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install mlflow==2.19.0 dagshub pandas scikit-learn matplotlib seaborn
+        pip install mlflow==2.19.0 dagshub
 
     - name: Run mlflow project
       env:
@@ -44,5 +44,43 @@ jobs:
 
     - name: Get latest MLflow run_id
       run: |
-        echo "Displaying generated Run ID:"
+        echo "Run ID:"
         cat MLProject/run_id.txt
+
+    - name: Install Python dependencies
+      run: |
+        pip install pandas scikit-learn matplotlib seaborn
+
+    - name: Upload to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: run-id-file
+        path: MLProject/run_id.txt
+
+    - name: Build Docker Model
+      env:
+        MLFLOW_TRACKING_USERNAME: AtthalaricNero
+        MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+        MLFLOW_TRACKING_URI: https://dagshub.com/AtthalaricNero/Proyek_ML_Dicoding.mlflow
+      run: |
+        RUN_ID=$(cat MLProject/run_id.txt)
+        
+        # Build image dengan nama lokal dulu
+        mlflow models build-docker \
+          --model-uri "runs:/$RUN_ID/model_final" \
+          --name "local-telco-model" \
+          --enable-mlserver
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Tag Docker Image
+      run: |
+        docker tag local-telco-model ${{ secrets.DOCKER_USERNAME }}/telco-churn-model:latest
+
+    - name: Push Docker Image
+      run: |
+        docker push ${{ secrets.DOCKER_USERNAME }}/telco-churn-model:latest
