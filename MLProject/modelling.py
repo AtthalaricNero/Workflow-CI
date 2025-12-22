@@ -43,6 +43,7 @@ def main():
     }
     
     
+    
     grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=3, scoring='accuracy', verbose=1)
     grid_search.fit(X_train, y_train)
     
