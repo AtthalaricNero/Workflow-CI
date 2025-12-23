@@ -8,7 +8,7 @@ on:
       - 'MLProject/**'
 
 permissions:
-  contents: write
+  contents: write  
 
 jobs:
   build-and-deploy:
@@ -47,16 +47,24 @@ jobs:
         echo "Run ID:"
         cat MLProject/run_id.txt
 
+    - name: Commit and Push run_id to GitHub
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        
+        git add MLProject/run_id.txt
+        
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Auto-update run_id.txt from CI [skip ci]"
+          git push
+        fi
+
     - name: Install Python dependencies
       run: |
-        echo "Dependencies already installed in Step 4 to prevent runtime error."
+        echo "Dependencies already installed to prevent runtime error."
         pip install pandas scikit-learn matplotlib seaborn
-
-    - name: Upload to GitHub
-      uses: actions/upload-artifact@v4
-      with:
-        name: run-id-file
-        path: MLProject/run_id.txt
 
     - name: Build Docker Model
       env:
@@ -65,7 +73,6 @@ jobs:
         MLFLOW_TRACKING_URI: https://dagshub.com/AtthalaricNero/Proyek_ML_Dicoding.mlflow
       run: |
         RUN_ID=$(cat MLProject/run_id.txt)
-        
         
         mlflow models build-docker \
           --model-uri "runs:/$RUN_ID/model_final" \
